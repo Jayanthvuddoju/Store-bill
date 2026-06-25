@@ -111,10 +111,6 @@ def generate_invoice(bill_id):
     x_divider = width/2.0 + 50
     c.line(x_divider, y_details_top, x_divider, y_details_top - 180)
     
-    # Invoice No / Date Divider
-    x_subdivider = x_divider + 60
-    c.line(x_subdivider, y_details_top, x_subdivider, y_details_top - 80)
-    
     c.drawString(x_divider + 5, y_details_top - 20, "Invoice No:-")
     c.drawRightString(right_x - 5, y_details_top - 20, bill['bill_number'])
     c.line(x_divider, y_details_top - 40, right_x, y_details_top - 40)
@@ -177,9 +173,9 @@ def generate_invoice(bill_id):
     # SNO, Desc, Qty columns end at the start of Totals
     c.line(col_x_positions[1], y_table_header, col_x_positions[1], y_totals_start)
     c.line(col_x_positions[2], y_table_header, col_x_positions[2], y_totals_start)
-    c.line(col_x_positions[3], y_table_header, col_x_positions[3], y_totals_start)
     
     # Rate and Amount separator continues down to the footer line
+    c.line(col_x_positions[3], y_table_header, col_x_positions[3], y_footer_line)
     c.line(col_x_positions[4], y_table_header, col_x_positions[4], y_footer_line)
     
     # Horizontal lines for Totals rows
@@ -230,7 +226,7 @@ def generate_invoice(bill_id):
     draw_wrapped_text(c, terms, margin_x + 10, y_footer_line - 40, (x_footer_divider - margin_x) - 20, 12)
     
     # Stamp Box
-    c.setFont(font_bold, 18)
+    c.setFont(font_bold, 14)
     stamp_name = settings['stamp_name'] if 'stamp_name' in settings.keys() and settings['stamp_name'] else store_name
     c.drawCentredString(x_footer_divider + (right_x - x_footer_divider)/2.0, bottom_y + 20, stamp_name)
     
