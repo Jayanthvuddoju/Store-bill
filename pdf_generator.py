@@ -165,41 +165,8 @@ def generate_invoice(bill_id):
         c.drawCentredString(col_x_positions[4] + cols[4]['width']/2.0, y_item, amt_str)
         y_item -= 50
         
-    y_totals_top = 220
-    y_grand_total_bottom = y_totals_top - 72
-    
-    # Vertical Lines for columns
-    for x_pos in col_x_positions[1:-1]:
-        c.line(x_pos, y_table_header, x_pos, y_totals_top)
-        
-    c.line(margin_x, y_totals_top, right_x, y_totals_top)
-    
-    # Totals Box
-    c.setFont(font_bold, 9)
-    x_total_label = col_x_positions[3]
-    
-    c.drawCentredString(x_total_label + cols[3]['width']/2.0, y_totals_top - 12, "AMOUNT")
-    c.drawCentredString(col_x_positions[4] + cols[4]['width']/2.0, y_totals_top - 12, f"{bill['base_amount']:.2f}")
-    c.line(x_total_label, y_totals_top - 18, right_x, y_totals_top - 18)
-    
-    c.drawCentredString(x_total_label + cols[3]['width']/2.0, y_totals_top - 30, "CGST")
-    c.drawCentredString(col_x_positions[4] + cols[4]['width']/2.0, y_totals_top - 30, f"{bill['cgst_amount']:.2f}")
-    c.line(x_total_label, y_totals_top - 36, right_x, y_totals_top - 36)
-    
-    c.drawCentredString(x_total_label + cols[3]['width']/2.0, y_totals_top - 48, "SGST")
-    c.drawCentredString(col_x_positions[4] + cols[4]['width']/2.0, y_totals_top - 48, f"{bill['sgst_amount']:.2f}")
-    c.line(x_total_label, y_totals_top - 54, right_x, y_totals_top - 54)
-    
-    c.drawCentredString(x_total_label + cols[3]['width']/2.0, y_totals_top - 66, "GRAND TOTAL")
-    c.drawCentredString(col_x_positions[4] + cols[4]['width']/2.0, y_totals_top - 66, f"{bill['total_amount']:.2f}")
-    c.line(margin_x, y_grand_total_bottom, right_x, y_grand_total_bottom)
-    
-    # Left vertical line for totals box
-    c.line(x_total_label, y_totals_top, x_total_label, y_grand_total_bottom)
-    # Middle vertical line for totals box
-    c.line(col_x_positions[4], y_totals_top, col_x_positions[4], y_grand_total_bottom)
-    c.setFont("Helvetica-Bold", 8)    # Footer / Table Setup
-    y_footer_line = y_table_header - 350
+    # Footer / Table Setup
+    y_footer_line = bottom_y + 250
     y_totals_start = y_footer_line + 80
     
     # Table Grid Lines (Outer borders already handled, we draw vertical column lines)
