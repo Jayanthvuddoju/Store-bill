@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electronics Store Billing</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <h2><i class="fas fa-plug"></i> ElectroBill</h2>
+        </div>
+        <ul class="nav-links">
+
+            <li><a href="{{ url_for('new_bill') }}" class="{% if request.endpoint == 'new_bill' %}active{% endif %}"><i class="fas fa-plus-circle"></i> New Bill</a></li>
+            <li><a href="{{ url_for('history') }}" class="{% if request.endpoint == 'history' %}active{% endif %}"><i class="fas fa-history"></i> Bill History</a></li>
+            <li><a href="{{ url_for('analytics') }}" class="{% if request.endpoint == 'analytics' %}active{% endif %}"><i class="fas fa-chart-line"></i> Analytics</a></li>
+            <li><a href="{{ url_for('settings') }}" class="{% if request.endpoint == 'settings' %}active{% endif %}"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <div class="header-title">
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            </div>
+            <div class="user-info">
+                <span><i class="fas fa-user-circle"></i> Admin</span>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div id="invoiceModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="flex-between" style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+            <h2>Invoice Preview</h2>
+            <span class="close" onclick="closeInvoiceModal()">&times;</span>
+        </div>
+        <div class="text-right mb-20">
+            <button class="btn btn-primary" onclick="printInvoice()"><i class="fas fa-print"></i> Print Bill</button>
+            <a id="downloadPdfBtn" href="#" target="_blank" class="btn btn-success"><i class="fas fa-download"></i> Download PDF</a>
+        </div>
+        <div style="height: 60vh;">
+            <iframe id="invoiceIframe" style="width: 100%; height: 100%; border: 1px solid #ccc;"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        function showInvoiceModal(billId) {
+            document.getElementById('invoiceIframe').src = '/print_bill/' + billId;
+            document.getElementById('downloadPdfBtn').href = '/download_pdf/' + billId;
+            document.getElementById('invoiceModal').style.display = 'block';
+        }
+        function closeInvoiceModal() {
+            document.getElementById('invoiceModal').style.display = 'none';
+            // Optional: reload if on new_bill page
+            if(window.location.pathname === '/' || window.location.pathname === '/new_bill') {
+                window.location.reload();
+            }
+        }
+        function printInvoice() {
+            document.getElementById('invoiceIframe').contentWindow.print();
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

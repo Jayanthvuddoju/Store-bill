@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block page_title %}Analytics & Reports{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Top Selling Products</h3>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Total Quantity Sold</th>
+                    <th>Total Revenue</th>
+                </tr>
+            </thead>
+            <tbody id="top-products-body">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Daily Sales (Last 7 Days)</h3>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Revenue</th>
+                </tr>
+            </thead>
+            <tbody id="daily-sales-body">
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch('/api/analytics_data')
+        .then(res => res.json())
+        .then(data => {
+            // Top Products
+            const topTbody = document.getElementById('top-products-body');
+            topTbody.innerHTML = '';
+            if(data.top_products.length === 0) {
+                topTbody.innerHTML = '<tr><td colspan="3" class="text-center">No data available</td></tr>';
+            } else {
+                data.top_products.forEach(item => {
+                    topTbody.innerHTML += `<tr>
+                        <td>${item.product_name}</td>
+                        <td>${item.total_qty}</td>
+                        <td>₹${item.total_revenue.toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            
+            // Daily Sales
+            const dailyTbody = document.getElementById('daily-sales-body');
+            dailyTbody.innerHTML = '';
+            if(data.daily_sales.length === 0) {
+                dailyTbody.innerHTML = '<tr><td colspan="2" class="text-center">No data available</td></tr>';
+            } else {
+                data.daily_sales.forEach(item => {
+                    dailyTbody.innerHTML += `<tr>
+                        <td>${item.date}</td>
+                        <td>₹${item.revenue.toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+        })
+        .catch(err => console.error("Failed to load analytics:", err));
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block page_title %}New Bill{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="flex-between">
+        <h3>Invoice Info</h3>
+        <div>
+            <strong>Bill No:</strong> <span id="bill-number">{{ bill_number }}</span><br>
+            <strong>Date:</strong> {{ current_datetime }}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Customer Details</h3>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Customer Name *</label>
+            <input type="text" id="cust-name" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="text" id="cust-phone" class="form-control" required>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Address</label>
+        <input type="text" id="cust-address" class="form-control">
+    </div>
+</div>
+
+<div class="card">
+    <h3>Products</h3>
+    <div class="table-responsive">
+        <table id="products-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Brand</th>
+                    <th>Specifications</th>
+                    <th>Quantity</th>
+                    <th>Unit Price (₹)</th>
+                    <th>Total (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="product-list">
+                <tr>
+                    <td>
+                        <select class="form-control item-category">
+                            <option value="" selected disabled hidden>Select Category...</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                            <option value="Other">Other</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-control item-brand">
+                            <option value="" selected disabled hidden>Select Brand...</option>
+                            {% for brand in brands %}
+                            <option value="{{ brand }}">{{ brand }}</option>
+                            {% endfor %}
+                            <option value="Other">Other</option>
+                        </select>
+                    </td>
+                    <td><input type="text" class="form-control item-details" placeholder="e.g. 32 inches"></td>
+                    <td><input type="number" class="form-control item-qty" value="1" min="1" onchange="calculateRow(this)"></td>
+                    <td><input type="number" class="form-control item-price" step="0.01" onchange="calculateRow(this)"></td>
+                    <td><input type="text" class="form-control item-total" readonly value="0.00"></td>
+                    <td><button type="button" class="btn btn-danger" onclick="removeRow(this)"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <button type="button" class="btn btn-primary mt-20" onclick="addRow()"><i class="fas fa-plus"></i> Add Item</button>
+
+    <h4 class="text-right">Base Amount: ₹<span id="baseAmount">0.00</span></h4>
+    <h4 class="text-right">CGST: ₹<span id="cgstAmount">0.00</span></h4>
+    <h4 class="text-right">SGST: ₹<span id="sgstAmount">0.00</span></h4>
+    <h3 class="text-right mt-10">Grand Total: ₹<span id="grandTotal">0.00</span></h3>
+
+    <div class="text-right mt-20">
+        <button type="button" class="btn btn-success" onclick="saveBill()"><i class="fas fa-save"></i> Save & Generate PDF</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function calculateRow(element) {
+        let row = element.closest('tr');
+        let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+        let price = parseFloat(row.querySelector('.item-price').value) || 0;
+        let total = qty * price;
+        row.querySelector('.item-total').value = total.toFixed(2);
+        calculateGrandTotal();
+    }
+
+    function calculateGrandTotal() {
+        let totals = document.querySelectorAll('.item-total');
+        let grandTotal = 0;
+        totals.forEach(function(el) {
+            grandTotal += parseFloat(el.value) || 0;
+        });
+        
+        let taxRate = {{ tax_rate }};
+        let baseAmount = grandTotal / (1 + (taxRate / 100));
+        let cgst = (grandTotal - baseAmount) / 2;
+        let sgst = (grandTotal - baseAmount) / 2;
+        
+        document.getElementById('baseAmount').innerText = baseAmount.toFixed(2);
+        document.getElementById('cgstAmount').innerText = cgst.toFixed(2);
+        document.getElementById('sgstAmount').innerText = sgst.toFixed(2);
+        document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+
+    function addRow() {
+        let tbody = document.getElementById('product-list');
+        let newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>
+                <select class="form-control item-category">
+                    <option value="" selected disabled hidden>Select Category...</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                    <option value="Other">Other</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-control item-brand">
+                    <option value="" selected disabled hidden>Select Brand...</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand }}">{{ brand }}</option>
+                    {% endfor %}
+                    <option value="Other">Other</option>
+                </select>
+            </td>
+            <td><input type="text" class="form-control item-details" placeholder="e.g. 32 inches"></td>
+            <td><input type="number" class="form-control item-qty" value="1" min="1" onchange="calculateRow(this)"></td>
+            <td><input type="number" class="form-control item-price" step="0.01" onchange="calculateRow(this)"></td>
+            <td><input type="text" class="form-control item-total" readonly value="0.00"></td>
+            <td><button type="button" class="btn btn-danger" onclick="removeRow(this)"><i class="fas fa-trash"></i></button></td>
+        `;
+        tbody.appendChild(newRow);
+    }
+
+    function removeRow(btn) {
+        let row = btn.closest('tr');
+        row.remove();
+        calculateGrandTotal();
+    }
+
+    function saveBill() {
+        let custName = document.getElementById('cust-name').value;
+        let custPhone = document.getElementById('cust-phone').value;
+        let custAddress = document.getElementById('cust-address').value;
+
+        if(!custName || !custPhone) {
+            alert('Please fill customer name and phone number');
+            return;
+        }
+
+        let items = [];
+        let rows = document.querySelectorAll('#product-list tr');
+        let valid = true;
+
+        rows.forEach(row => {
+            let pCat = row.querySelector('.item-category').value.trim();
+            let pBrand = row.querySelector('.item-brand').value.trim();
+            let pDetails = row.querySelector('.item-details').value.trim();
+            let pQty = parseInt(row.querySelector('.item-qty').value) || 0;
+            let pPrice = parseFloat(row.querySelector('.item-price').value) || 0;
+            let pTotal = parseFloat(row.querySelector('.item-total').value);
+            
+            let pNameParts = [];
+            if (pBrand && pBrand.toLowerCase() !== 'other') pNameParts.push(pBrand);
+            if (pCat && pCat.toLowerCase() !== 'other') pNameParts.push(pCat);
+            if (pDetails) pNameParts.push(pDetails);
+            
+            let pName = pNameParts.join(' ').trim();
+
+            if(pName && pQty > 0 && pPrice >= 0) {
+                items.push({
+                    product_name: pName,
+                    brand: pBrand,
+                    quantity: pQty,
+                    unit_price: pPrice,
+                    total_price: pTotal
+                });
+            } else if (pName) {
+                valid = false;
+            }
+        });
+
+        if(!valid || items.length === 0) {
+            alert('Please enter valid product details');
+            return;
+        }
+
+        let payload = {
+            bill_number: "{{ bill_number }}",
+            customer: { name: custName, phone: custPhone, address: custAddress },
+            items: items,
+            total_amount: parseFloat(document.getElementById('grandTotal').innerText),
+            base_amount: parseFloat(document.getElementById('baseAmount').innerText),
+            cgst_amount: parseFloat(document.getElementById('cgstAmount').innerText),
+            sgst_amount: parseFloat(document.getElementById('sgstAmount').innerText)
+        };
+
+        fetch('/api/save_bill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                // Show modal with the generated bill
+                showInvoiceModal(data.bill_id);
+            } else {
+                alert('Error saving bill: ' + data.error);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('An error occurred.');
+        });
+    }
+</script>
+{% endblock %}

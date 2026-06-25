@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h3>Store Configuration</h3>
+    
+    <form method="POST" action="{{ url_for('settings') }}">
+        <div class="form-group">
+            <label for="store_name">Store Name</label>
+            <input type="text" id="store_name" name="store_name" class="form-control" value="{{ settings['store_name'] if settings else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="text" id="phone" name="phone" class="form-control" value="{{ settings['phone'] if settings else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="store_address">Store Address</label>
+            <textarea id="store_address" name="store_address" class="form-control" rows="3" required>{{ settings['store_address'] if settings else '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="gst_number">GST Number (Optional)</label>
+            <input type="text" id="gst_number" name="gst_number" class="form-control" value="{{ settings['gst_number'] if settings else '' }}">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="email">Email ID</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ settings['email'] if settings and 'email' in settings.keys() else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="owner_name">Owner Name</label>
+                <input type="text" id="owner_name" name="owner_name" class="form-control" value="{{ settings['owner_name'] if settings and 'owner_name' in settings.keys() else '' }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="terms_conditions">Terms & Conditions</label>
+            <textarea id="terms_conditions" name="terms_conditions" class="form-control" rows="4">{{ settings['terms_conditions'] if settings and 'terms_conditions' in settings.keys() else '1. Goods once sold cannot be returned. 2. Subject to local jurisdiction.' }}</textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stamp_name">Stamp / Signature Name</label>
+                <input type="text" id="stamp_name" name="stamp_name" class="form-control" value="{{ settings['stamp_name'] if settings and 'stamp_name' in settings.keys() else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="tax_rate">Default Tax Rate (%)</label>
+                <input type="number" id="tax_rate" name="tax_rate" class="form-control" step="0.1" value="{{ settings['tax_rate'] if settings and 'tax_rate' in settings.keys() else '18.0' }}">
+            </div>
+        </div>
+        
+        <div class="text-right mt-20">
+            <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save Settings</button>
+        </div>
+    </form>
+</div>
+
+<div class="form-row mt-20" style="display: flex; gap: 20px; max-width: 800px; margin: 20px auto;">
+    <!-- Categories -->
+    <div class="card" style="flex: 1;">
+        <h3>Manage Categories</h3>
+        <div class="flex-between mb-20">
+            <input type="text" id="new_category" class="form-control" placeholder="New Category" style="margin-right: 10px;">
+            <button class="btn btn-primary" onclick="addCategory()"><i class="fas fa-plus"></i></button>
+        </div>
+        <ul style="list-style-type: none; padding: 0;">
+            {% for cat in categories %}
+            <li class="flex-between" style="padding: 10px; border-bottom: 1px solid #eee;">
+                <span>{{ cat['name'] }}</span>
+                <button class="btn btn-danger" style="padding: 2px 8px;" onclick="deleteCategory({{ cat['id'] }})"><i class="fas fa-trash"></i></button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Brands -->
+    <div class="card" style="flex: 1;">
+        <h3>Manage Brands</h3>
+        <div class="flex-between mb-20">
+            <input type="text" id="new_brand" class="form-control" placeholder="New Brand" style="margin-right: 10px;">
+            <button class="btn btn-primary" onclick="addBrand()"><i class="fas fa-plus"></i></button>
+        </div>
+        <ul style="list-style-type: none; padding: 0;">
+            {% for brand in brands %}
+            <li class="flex-between" style="padding: 10px; border-bottom: 1px solid #eee;">
+                <span>{{ brand['name'] }}</span>
+                <button class="btn btn-danger" style="padding: 2px 8px;" onclick="deleteBrand({{ brand['id'] }})"><i class="fas fa-trash"></i></button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function addCategory() {
+    let name = document.getElementById('new_category').value;
+    if(!name) return;
+    fetch('/api/add_category', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name})
+    }).then(r => r.json()).then(data => {
+        if(data.success) location.reload();
+        else alert(data.error);
+    });
+}
+
+function deleteCategory(id) {
+    if(confirm('Delete this category?')) {
+        fetch('/api/delete_category/' + id, {method: 'DELETE'})
+        .then(r => r.json()).then(data => {
+            if(data.success) location.reload();
+        });
+    }
+}
+
+function addBrand() {
+    let name = document.getElementById('new_brand').value;
+    if(!name) return;
+    fetch('/api/add_brand', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name})
+    }).then(r => r.json()).then(data => {
+        if(data.success) location.reload();
+        else alert(data.error);
+    });
+}
+
+function deleteBrand(id) {
+    if(confirm('Delete this brand?')) {
+        fetch('/api/delete_brand/' + id, {method: 'DELETE'})
+        .then(r => r.json()).then(data => {
+            if(data.success) location.reload();
+        });
+    }
+}
+</script>
+{% endblock %}

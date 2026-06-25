@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice - {{ bill['bill_number'] }}</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; padding: 20px; font-size: 14px; background: #f0f0f0; }
+        .invoice-wrapper { border: 2px solid #000; width: 210mm; min-height: 297mm; height: 297mm; margin: 0 auto; box-sizing: border-box; background: white; display: flex; flex-direction: column; }
+        @media print {
+            body { padding: 0; background: white; }
+            .invoice-wrapper { width: 210mm; height: 297mm; margin: 0; border: 2px solid #000; }
+        }
+        .border-bottom { border-bottom: 2px solid #000; }
+        .border-right { border-right: 2px solid #000; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .p-10 { padding: 10px; }
+        
+        .gst-box { display: inline-block; border: 2px solid #000; padding: 2px 10px; font-weight: bold; float: left; margin: 10px; font-size: 16px; }
+        .header { text-align: center; padding: 15px 15px 20px 15px; }
+        .tax-invoice-label { font-weight: bold; font-size: 18px; text-decoration: underline; }
+        .shop-name { font-weight: bold; font-size: 42px; margin: 15px 0 10px 0; }
+
+        .details-grid { display: flex; }
+        .party-details { width: 60%; }
+        .customer-details-content { min-height: 120px; }
+        .finance-details { width: 40%; }
+        
+        .finance-inner-grid { display: flex; justify-content: space-between; }
+        
+        .table-section { flex-grow: 1; display: flex; flex-direction: column; }
+        table { width: 100%; border-collapse: collapse; height: 100%; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 2px solid #000; padding: 5px; text-align: center; vertical-align: top; }
+        .header-row { height: auto; }
+        .header-row th { border-top: 0; }
+        .items-row { height: 100%; }
+        
+        .footer-grid { display: flex; min-height: 250px; }
+        .footer-left { width: 60%; padding: 10px; }
+        .totals-area { width: 40%; display: flex; flex-direction: column; }
+        .stamp-box { padding: 10px; display: flex; align-items: flex-end; justify-content: center; flex-grow: 1; font-weight: bold; }
+        .terms-box { font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="invoice-wrapper">
+        <div class="header border-bottom">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-bottom: 15px;">
+                {% if settings['phone'] %}
+                <div>Ph: {{ settings['phone'] }}</div>
+                {% endif %}
+                {% if settings['gst_number'] %}
+                <div>GST NO: {{ settings['gst_number'] }}</div>
+                {% endif %}
+            </div>
+            <div class="shop-name">{{ settings['store_name'] }}</div>
+        </div>
+        <div class="text-center border-bottom p-10" style="font-size: 14px; font-weight: bold;">
+            {{ settings['store_address'] }}
+        </div>
+
+        <div class="details-grid border-bottom">
+            <div class="party-details border-right">
+                <div class="text-left border-bottom" style="font-size: 20px; font-weight: bold; padding: 10px;">CUSTOMER DETAILS</div>
+                <div class="p-10 text-left customer-details-content">
+                    <div class="bold" style="font-size: 16px;">MR {{ bill['name'] }}</div>
+                    <div>{{ bill['address'] }}</div>
+                    {% if bill['phone'] %}<div>Phone: {{ bill['phone'] }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="finance-details">
+                <div class="finance-inner-grid">
+                    <div class="p-10" style="width: 25%;">
+                        <div class="bold">Invoice No:-</div>
+                        <div class="bold" style="margin-top: 10px;">Date:-</div>
+                    </div>
+                    <div class="p-10 text-right" style="width: 75%; font-size: 13px; word-break: break-word;">
+                        <div>{{ bill['bill_number'] }}</div>
+                        <div style="margin-top: 10px;">{{ bill['created_at'].split()[0] }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-section border-bottom">
+            <table>
+                <tr class="header-row">
+                    <th style="width: 8%; border-left: 0;">SNO</th>
+                    <th style="width: 52%;">Description Of Goods</th>
+                    <th style="width: 10%;">Qty</th>
+                    <th style="width: 10%;">Rate</th>
+                    <th style="width: 20%; border-right: 0;">Amount</th>
+                </tr>
+                <tr class="items-row">
+                    <td style="border-left: 0; font-size: 16px;">
+                        {% for item in items %}<div>{{ loop.index }}</div><br>{% endfor %}
+                    </td>
+                    <td style="font-size: 16px;">
+                        {% for item in items %}<div>{{ item['product_name'] }}</div><br>{% endfor %}
+                    </td>
+                    <td style="font-size: 16px;">
+                        {% for item in items %}<div>{{ item['quantity'] }} PCS</div><br>{% endfor %}
+                    </td>
+                    <td style="font-size: 16px;">
+                        {% for item in items %}<div>{{ "%.2f"|format(item['unit_price']) }}</div><br>{% endfor %}
+                    </td>
+                    <td style="border-right: 0; font-size: 16px;">
+                        {% for item in items %}<div>{{ "%.2f"|format(item['total_price']) }}</div><br>{% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="3" rowspan="4" style="border-left: 0; border-bottom: 0;"></td>
+                    <td style="font-weight: bold; text-align: center;">AMOUNT</td>
+                    <td style="border-right: 0; text-align: right;">{{ "%.2f"|format(bill['base_amount'] if bill['base_amount'] else 0) }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold; text-align: center;">CGST</td>
+                    <td style="border-right: 0; text-align: right;">{{ "%.2f"|format(bill['cgst_amount'] if bill['cgst_amount'] else 0) }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold; text-align: center;">SGST</td>
+                    <td style="border-right: 0; text-align: right;">{{ "%.2f"|format(bill['sgst_amount'] if bill['sgst_amount'] else 0) }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold; text-align: center; border-bottom: 0;">GRAND TOTAL</td>
+                    <td style="border-right: 0; text-align: right; border-bottom: 0; font-weight: bold;">{{ "%.2f"|format(bill['total_amount']) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="details-grid">
+            <div class="footer-left border-right">
+                <div class="terms-box">
+                    <div class="bold" style="text-decoration: underline; margin-bottom: 5px;">Terms & Conditions</div>
+                    <div style="font-size: 12px; white-space: pre-wrap;">{{ settings['terms_conditions'] if settings['terms_conditions'] else '1. Received the above goods in good conditions.' }}</div>
+                </div>
+            </div>
+            <div class="totals-area">
+                <div class="stamp-box" style="font-size: 16px;">
+                    {{ settings['stamp_name'] if settings['stamp_name'] else settings['store_name'] }}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
