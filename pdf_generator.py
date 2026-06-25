@@ -79,13 +79,13 @@ def generate_invoice(bill_id):
         c.drawRightString(right_x - 5, top_y - 20, f"GST NO: {gst_val}")
     
     # Shop Name
-    c.setFont(font_bold, 32)
+    c.setFont(font_bold, 36)
     store_name = settings['store_name'] if 'store_name' in settings.keys() else "STORE"
     c.drawCentredString(width/2.0, top_y - 50, str(store_name))
     
     # Shop Address Line
     c.line(margin_x, top_y - 65, right_x, top_y - 65)
-    c.setFont(font_bold, 11)
+    c.setFont(font_bold, 12)
     addr = settings['store_address'] if 'store_address' in settings.keys() else ""
     c.drawCentredString(width/2.0, top_y - 80, str(addr))
     
@@ -94,14 +94,15 @@ def generate_invoice(bill_id):
     y_details_top = top_y - 95
     
     # Party Details (Left side)
-    c.setFont(font_bold, 16)
+    c.setFont(font_bold, 18)
     c.drawString(margin_x + 10, y_details_top - 25, "CUSTOMER DETAILS")
     
     c.line(margin_x, y_details_top - 35, right_x, y_details_top - 35)
     
-    c.setFont(font_bold, 11)
+    c.setFont(font_bold, 14)
     c.drawString(margin_x + 10, y_details_top - 50, f"MR {str(bill['name'])}")
-    c.setFont(font_regular, 10)
+    
+    c.setFont(font_regular, 12)
     draw_wrapped_text(c, bill['address'], margin_x + 10, y_details_top - 65, 280)
     if bill['phone']:
         c.drawString(margin_x + 10, y_details_top - 100, f"Phone: {bill['phone']}")
@@ -137,7 +138,7 @@ def generate_invoice(bill_id):
     cols[4]['width'] = right_x - margin_x - sum(c['width'] for c in cols[:-1])
     
     y_col_text = y_table_header - 15
-    c.setFont(font_bold, 9)
+    c.setFont(font_bold, 11)
     current_x = margin_x
     col_x_positions = []
     
@@ -152,7 +153,7 @@ def generate_invoice(bill_id):
     
     # Items
     y_item = y_table_data - 20
-    c.setFont(font_regular, 11)
+    c.setFont(font_regular, 13)
     for i, item in enumerate(items):
         c.drawCentredString(col_x_positions[0] + cols[0]['width']/2.0, y_item, str(i+1))
         qty_str = f"{item['quantity']} PCS"
@@ -166,7 +167,7 @@ def generate_invoice(bill_id):
         y_item -= 50
         
     # Footer / Table Setup
-    y_footer_line = bottom_y + 250
+    y_footer_line = bottom_y + 150
     y_totals_start = y_footer_line + 80
     
     # Table Grid Lines (Outer borders already handled, we draw vertical column lines)
@@ -198,7 +199,7 @@ def generate_invoice(bill_id):
     x_totals_label = col_x_positions[3]
     x_totals_value = col_x_positions[4]
     
-    c.setFont(font_bold, 11)
+    c.setFont(font_bold, 13)
     
     # AMOUNT
     y = y_totals_start - 15
@@ -221,15 +222,15 @@ def generate_invoice(bill_id):
     c.drawRightString(right_x - 5, y, f"{bill['total_amount']:.2f}")
     
     # Terms and Conditions
-    c.setFont(font_bold, 11)
+    c.setFont(font_bold, 13)
     c.drawString(margin_x + 10, y_footer_line - 20, "Terms & Conditions")
     
-    c.setFont(font_regular, 9)
+    c.setFont(font_regular, 11)
     terms = settings['terms_conditions'] if 'terms_conditions' in settings.keys() else "1. Received the above goods in good conditions."
     draw_wrapped_text(c, terms, margin_x + 10, y_footer_line - 40, (x_footer_divider - margin_x) - 20, 12)
     
     # Stamp Box
-    c.setFont(font_bold, 16)
+    c.setFont(font_bold, 18)
     stamp_name = settings['stamp_name'] if 'stamp_name' in settings.keys() and settings['stamp_name'] else store_name
     c.drawCentredString(x_footer_divider + (right_x - x_footer_divider)/2.0, bottom_y + 20, stamp_name)
     
