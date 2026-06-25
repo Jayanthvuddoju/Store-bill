@@ -199,7 +199,7 @@ def generate_invoice(bill_id):
     # Middle vertical line for totals box
     c.line(col_x_positions[4], y_totals_top, col_x_positions[4], y_grand_total_bottom)
     c.setFont("Helvetica-Bold", 8)    # Footer / Table Setup
-    y_footer_line = bottom_y + 250
+    y_footer_line = bottom_y + 300
     y_totals_start = y_footer_line + 80
     
     # Table Grid Lines (Outer borders already handled, we draw vertical column lines)
@@ -224,7 +224,7 @@ def generate_invoice(bill_id):
     c.line(margin_x, y_footer_line, right_x, y_footer_line)
     
     # Footer Vertical Divider (Terms | Stamp)
-    x_footer_divider = margin_x + (right_x - margin_x) * 0.6
+    x_footer_divider = margin_x + (right_x - margin_x) * 0.5
     c.line(x_footer_divider, y_footer_line, x_footer_divider, bottom_y)
     
     # Totals Section Text
