@@ -45,7 +45,7 @@
         </div>
         <div class="text-right mb-20">
             <button class="btn btn-primary" onclick="printInvoice()"><i class="fas fa-print"></i> Print Bill</button>
-            <a id="downloadPdfBtn" href="#" target="_blank" class="btn btn-success"><i class="fas fa-download"></i> Download PDF</a>
+            <a id="downloadPdfBtn" href="#" class="btn btn-success"><i class="fas fa-download"></i> Download PDF</a>
         </div>
         <div style="height: 60vh;">
             <iframe id="invoiceIframe" style="width: 100%; height: 100%; border: 1px solid #ccc;"></iframe>
@@ -55,9 +55,23 @@
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
+        function downloadPdf(billId) {
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.save_pdf(billId).then(success => {
+                    if (!success) {
+                        console.log('Download cancelled or failed');
+                    }
+                });
+            } else {
+                window.location.href = '/download_pdf/' + billId;
+            }
+        }
         function showInvoiceModal(billId) {
             document.getElementById('invoiceIframe').src = '/print_bill/' + billId;
-            document.getElementById('downloadPdfBtn').href = '/download_pdf/' + billId;
+            document.getElementById('downloadPdfBtn').onclick = function(e) {
+                e.preventDefault();
+                downloadPdf(billId);
+            };
             document.getElementById('invoiceModal').style.display = 'block';
         }
         function closeInvoiceModal() {

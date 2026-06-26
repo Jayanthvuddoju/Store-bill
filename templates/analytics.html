@@ -4,17 +4,34 @@
 
 {% block content %}
 <div class="card">
-    <h3>Top Selling Products</h3>
+    <h3>Top Selling Categories</h3>
     <div class="table-responsive">
         <table>
             <thead>
                 <tr>
-                    <th>Product Name</th>
+                    <th>Category</th>
                     <th>Total Quantity Sold</th>
                     <th>Total Revenue</th>
                 </tr>
             </thead>
             <tbody id="top-products-body">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Top Selling Brands</h3>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Brand</th>
+                    <th>Total Quantity Sold</th>
+                    <th>Total Revenue</th>
+                </tr>
+            </thead>
+            <tbody id="top-brands-body">
             </tbody>
         </table>
     </div>
@@ -43,15 +60,30 @@
         fetch('/api/analytics_data')
         .then(res => res.json())
         .then(data => {
-            // Top Products
+            // Top Categories
             const topTbody = document.getElementById('top-products-body');
             topTbody.innerHTML = '';
-            if(data.top_products.length === 0) {
+            if(!data.top_categories || data.top_categories.length === 0) {
                 topTbody.innerHTML = '<tr><td colspan="3" class="text-center">No data available</td></tr>';
             } else {
-                data.top_products.forEach(item => {
+                data.top_categories.forEach(item => {
                     topTbody.innerHTML += `<tr>
-                        <td>${item.product_name}</td>
+                        <td>${item.category_name}</td>
+                        <td>${item.total_qty}</td>
+                        <td>₹${item.total_revenue.toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+            
+            // Top Brands
+            const brandTbody = document.getElementById('top-brands-body');
+            brandTbody.innerHTML = '';
+            if(!data.top_brands || data.top_brands.length === 0) {
+                brandTbody.innerHTML = '<tr><td colspan="3" class="text-center">No data available</td></tr>';
+            } else {
+                data.top_brands.forEach(item => {
+                    brandTbody.innerHTML += `<tr>
+                        <td>${item.brand_name}</td>
                         <td>${item.total_qty}</td>
                         <td>₹${item.total_revenue.toFixed(2)}</td>
                     </tr>`;

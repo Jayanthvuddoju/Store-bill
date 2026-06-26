@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Invoice</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: #333;
+            width: 210mm;
+            min-height: 297mm;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .invoice-container {
+            padding: 40px 50px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 50px;
+        }
+
+        .company-info {
+            max-width: 50%;
+        }
+
+        .logo-container {
+            margin-bottom: 15px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+            color: #5e54a4;
+            font-weight: bold;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c2560;
+            margin-bottom: 20px;
+        }
+
+        .address-block {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #444;
+        }
+        .address-block-title {
+            font-weight: 600;
+            color: #2c2560;
+            margin-bottom: 5px;
+        }
+
+        .invoice-title-section {
+            text-align: right;
+        }
+
+        .invoice-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: #5e54a4;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .invoice-date {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .middle-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+
+        .table-container {
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #5e54a4;
+            color: white;
+            text-align: left;
+            padding: 12px 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        th:first-child { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+        th:last-child { border-top-right-radius: 4px; border-bottom-right-radius: 4px; text-align: right; }
+
+        td {
+            padding: 15px 15px;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        
+        td:last-child { text-align: right; font-weight: 600; }
+
+        .item-name {
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+
+        .item-desc {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .notes-area {
+            width: 45%;
+            font-size: 11px;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .notes-area .note-title {
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 5px;
+        }
+
+        .calculations {
+            width: 45%;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .calc-row span:last-child { width: 100px; text-align: right; }
+
+        .total-due-row {
+            display: flex;
+            justify-content: space-between;
+            background-color: #5e54a4;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 15px;
+            border-radius: 4px;
+        }
+
+        .thank-you {
+            margin-top: 60px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c2560;
+        }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 2px solid #5e54a4;
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .footer-col {
+            width: 30%;
+        }
+
+        .footer-title {
+            font-weight: 700;
+            color: #2c2560;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        
+        .footer-row {
+            display: flex;
+        }
+        .footer-label { width: 60px; font-weight: 600; }
+
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        
+        <div class="header-section">
+            <div class="company-info">
+                <div class="logo-container">
+                    <div class="logo-icon">@</div>
+                </div>
+                <div class="company-name">
+                    {{ settings['store_name'] if settings else 'Business Name.' }}
+                </div>
+                <div class="address-block">
+                    <div class="address-block-title">Office Address</div>
+                    <div>{{ settings['store_address'] if settings else 'Main street, Your Loc.' }}</div>
+                    <div style="margin-top: 15px;"><b>Phone:</b> {{ settings['phone'] if settings else '+123 456 7890' }}</div>
+                    {% if settings and settings.get('email') %}
+                    <div><b>Email:</b> {{ settings['email'] }}</div>
+                    {% endif %}
+                    {% if settings and settings.get('gst_number') %}
+                    <div><b>GST No:</b> {{ settings['gst_number'] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="invoice-title-section">
+                <div class="invoice-title">INVOICE</div>
+                <div class="invoice-date">{{ bill['created_at'][:10] }}</div>
+                <div class="invoice-date" style="margin-top: 5px; font-size: 12px; color: #666;">Inv. No: #{{ bill['id'] }}</div>
+            </div>
+        </div>
+
+        <div class="middle-section">
+            <div class="address-block" style="margin-left: auto; width: 40%;">
+                <div class="address-block-title">To :</div>
+                <div style="font-weight: 700; font-size: 15px; margin-bottom: 5px; color: #000;">{{ bill['customer_name'] }}</div>
+                <div>{{ bill['customer_phone'] }}</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Items Description</th>
+                        <th style="text-align: center;">Unit Price</th>
+                        <th style="text-align: center;">Qnt</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            <div class="item-name">{{ item['product_name'] }}</div>
+                            <div class="item-desc">Brand: {{ item['brand'] }}</div>
+                            {% if item.get('category') %}
+                            <div class="item-desc">Category: {{ item['category'] }}</div>
+                            {% endif %}
+                            {% if item.get('hsn_code') %}
+                            <div class="item-desc">HSN: {{ item['hsn_code'] }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">₹{{ "%.2f"|format(item['unit_price']) }}</td>
+                        <td style="text-align: center;">{{ item['quantity'] }}</td>
+                        <td>₹{{ "%.2f"|format(item['total_price']) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="totals-section">
+            <div class="notes-area">
+                <div class="note-title">Note:</div>
+                <div>Thank you for choosing {{ settings['store_name'] if settings else 'us' }}. For any questions, please contact us.</div>
+            </div>
+            <div class="calculations">
+                <div class="calc-row">
+                    <span>SUBTOTAL :</span>
+                    <span>₹{{ "%.2f"|format(bill.get('base_amount', bill['total_amount'])) }}</span>
+                </div>
+                <div class="calc-row">
+                    <span>CGST :</span>
+                    <span>₹{{ "%.2f"|format(bill.get('cgst_amount', 0)) }}</span>
+                </div>
+                <div class="calc-row">
+                    <span>SGST :</span>
+                    <span>₹{{ "%.2f"|format(bill.get('sgst_amount', 0)) }}</span>
+                </div>
+                <div class="total-due-row">
+                    <span>TOTAL DUE :</span>
+                    <span>₹{{ "%.2f"|format(bill['total_amount']) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="thank-you">
+            Thank you for your Business
+        </div>
+
+        <div class="footer">
+            <div class="footer-col">
+                <div class="footer-title">Questions?</div>
+                <div class="footer-row">
+                    <div class="footer-label">Email us</div>
+                    <div>: {{ settings['email'] if settings and settings.get('email') else 'company@mail.site' }}</div>
+                </div>
+                <div class="footer-row">
+                    <div class="footer-label">Call us</div>
+                    <div>: {{ settings['phone'] if settings else '+123 456 7890' }}</div>
+                </div>
+            </div>
+            <div class="footer-col">
+                <div class="footer-title">Payment Info :</div>
+                <div class="footer-row">
+                    <div class="footer-label">Account</div>
+                    <div>: Bank details here</div>
+                </div>
+            </div>
+            <div class="footer-col">
+                <div class="footer-title">Terms & Conditions:</div>
+                <div>{{ settings['terms_conditions'] if settings else 'Goods once sold cannot be returned.' }}</div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -52,6 +52,14 @@
                 <label for="tax_rate">Default Tax Rate (%)</label>
                 <input type="number" id="tax_rate" name="tax_rate" class="form-control" step="0.1" value="{{ settings['tax_rate'] if settings and 'tax_rate' in settings.keys() else '18.0' }}">
             </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="bill_template">Bill Design Template</label>
+                <select id="bill_template" name="bill_template" class="form-control">
+                    <option value="standard" {% if not settings or 'bill_template' not in settings.keys() or settings['bill_template'] == 'standard' %}selected{% endif %}>Standard (Previous)</option>
+                    <option value="modern" {% if settings and 'bill_template' in settings.keys() and settings['bill_template'] == 'modern' %}selected{% endif %}>Modern (Purple)</option>
+                </select>
+            </div>
         </div>
         
         <div class="text-right mt-20">

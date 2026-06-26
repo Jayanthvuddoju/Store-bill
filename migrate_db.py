@@ -18,6 +18,8 @@ def migrate():
     except: pass
     try: cursor.execute('ALTER TABLE Settings ADD COLUMN tax_rate REAL DEFAULT 18.0')
     except: pass
+    try: cursor.execute('ALTER TABLE Settings ADD COLUMN bill_template TEXT DEFAULT "standard"')
+    except: pass
 
     # Add columns to Bills
     try: cursor.execute('ALTER TABLE Bills ADD COLUMN finance_by TEXT DEFAULT ""')
@@ -31,6 +33,8 @@ def migrate():
     
     # Add columns to Bill_Items
     try: cursor.execute('ALTER TABLE Bill_Items ADD COLUMN hsn_code TEXT DEFAULT ""')
+    except: pass
+    try: cursor.execute('ALTER TABLE Bill_Items ADD COLUMN category TEXT DEFAULT ""')
     except: pass
 
     conn.commit()

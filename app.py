@@ -4,9 +4,21 @@ from datetime import datetime
 import os
 import random
 import string
-from database import get_db_connection
+from database import get_db_connection, init_db
+from migrate_db import migrate
+import sys
 
-app = Flask(__name__)
+# Determine if running as a script or a frozen exe
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    app = Flask(__name__)
+
+# Initialize and migrate database
+init_db()
+migrate()
 
 # Ensure invoices directory exists
 os.makedirs("invoices", exist_ok=True)
@@ -16,13 +28,15 @@ os.makedirs("invoices", exist_ok=True)
 @app.route('/')
 @app.route('/new_bill')
 def new_bill():
-    # Auto-generate bill number
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    bill_number = f"INV-{timestamp}-{random_str}"
-    
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Auto-generate simple bill number
+    cursor.execute("SELECT MAX(id) FROM Bills")
+    max_id = cursor.fetchone()[0]
+    next_id = max_id + 1 if max_id else 1
+    bill_number = f"INV-{1000 + next_id}"
+    
     cursor.execute("SELECT name FROM Categories ORDER BY name")
     categories = [row['name'] for row in cursor.fetchall()]
     cursor.execute("SELECT name FROM Brands ORDER BY name")
@@ -67,15 +81,18 @@ def save_bill():
         # Insert Bill Items
         for item in data['items']:
             cursor.execute("""
-                INSERT INTO Bill_Items (bill_id, product_name, brand, hsn_code, quantity, unit_price, total_price) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (bill_id, item['product_name'], item['brand'], item.get('hsn_code', ''), item['quantity'], item['unit_price'], item['total_price']))
+                INSERT INTO Bill_Items (bill_id, product_name, brand, category, hsn_code, quantity, unit_price, total_price) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (bill_id, item['product_name'], item['brand'], item.get('category', ''), item.get('hsn_code', ''), item['quantity'], item['unit_price'], item['total_price']))
             
         conn.commit()
         
-        # Here we will call the PDF generation
-        from pdf_generator import generate_invoice
-        pdf_path = generate_invoice(bill_id)
+        try:
+            # Here we will call the PDF generation
+            from pdf_generator import generate_invoice
+            pdf_path = generate_invoice(bill_id)
+        except Exception as e:
+            print(f"Warning: PDF generation failed during save: {e}")
         
         conn.close()
         return jsonify({"success": True, "bill_id": bill_id, "pdf_url": f"/download_pdf/{bill_id}"})
@@ -119,6 +136,13 @@ def download_pdf(bill_id):
     
     if bill:
         pdf_path = os.path.join(os.getcwd(), 'invoices', f"{bill['bill_number']}.pdf")
+        if not os.path.exists(pdf_path):
+            try:
+                from pdf_generator import generate_invoice
+                generate_invoice(bill_id)
+            except Exception as e:
+                print(f"Failed to generate PDF on the fly: {e}")
+                
         if os.path.exists(pdf_path):
             return send_file(pdf_path, as_attachment=True)
     
@@ -148,7 +172,12 @@ def print_bill(bill_id):
     if not bill:
         return "Bill not found", 404
         
-    return render_template('print_bill.html', settings=settings, bill=bill, items=items)
+    settings_dict = dict(settings) if settings else {}
+    bill_dict = dict(bill) if bill else {}
+    items_list = [dict(i) for i in items]
+    
+    template_name = 'print_bill_modern.html' if settings_dict.get('bill_template') == 'modern' else 'print_bill.html'
+    return render_template(template_name, settings=settings_dict, bill=bill_dict, items=items_list)
 
 @app.route('/analytics')
 def analytics():
@@ -159,15 +188,25 @@ def api_analytics_data():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Top selling products
+    # Top selling categories
     cursor.execute("""
-        SELECT product_name, SUM(quantity) as total_qty, SUM(total_price) as total_revenue
+        SELECT COALESCE(NULLIF(category, ''), 'Unknown') as category_name, SUM(quantity) as total_qty, SUM(total_price) as total_revenue
         FROM Bill_Items
-        GROUP BY product_name
+        GROUP BY COALESCE(NULLIF(category, ''), 'Unknown')
         ORDER BY total_qty DESC
         LIMIT 5
     """)
-    top_products = [dict(row) for row in cursor.fetchall()]
+    top_categories = [dict(row) for row in cursor.fetchall()]
+    
+    # Top selling brands
+    cursor.execute("""
+        SELECT COALESCE(NULLIF(brand, ''), 'Unknown') as brand_name, SUM(quantity) as total_qty, SUM(total_price) as total_revenue
+        FROM Bill_Items
+        GROUP BY COALESCE(NULLIF(brand, ''), 'Unknown')
+        ORDER BY total_qty DESC
+        LIMIT 5
+    """)
+    top_brands = [dict(row) for row in cursor.fetchall()]
     
     # Daily sales for the last 7 days
     cursor.execute("""
@@ -180,7 +219,7 @@ def api_analytics_data():
     daily_sales = [dict(row) for row in cursor.fetchall()]
     
     conn.close()
-    return jsonify({"top_products": top_products, "daily_sales": daily_sales})
+    return jsonify({"top_categories": top_categories, "top_brands": top_brands, "daily_sales": daily_sales})
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
@@ -196,6 +235,7 @@ def settings():
         owner_name = request.form.get('owner_name', '')
         terms_conditions = request.form.get('terms_conditions', '')
         stamp_name = request.form.get('stamp_name', '')
+        bill_template = request.form.get('bill_template', 'standard')
         try:
             tax_rate = float(request.form.get('tax_rate', 18.0))
         except ValueError:
@@ -204,9 +244,9 @@ def settings():
         cursor.execute("""
             UPDATE Settings 
             SET store_name = ?, store_address = ?, phone = ?, gst_number = ?,
-                email = ?, owner_name = ?, terms_conditions = ?, stamp_name = ?, tax_rate = ?
+                email = ?, owner_name = ?, terms_conditions = ?, stamp_name = ?, tax_rate = ?, bill_template = ?
             WHERE id = (SELECT id FROM Settings LIMIT 1)
-        """, (store_name, store_address, phone, gst_number, email, owner_name, terms_conditions, stamp_name, tax_rate))
+        """, (store_name, store_address, phone, gst_number, email, owner_name, terms_conditions, stamp_name, tax_rate, bill_template))
         conn.commit()
         
     cursor.execute("SELECT * FROM Settings LIMIT 1")
@@ -220,7 +260,8 @@ def settings():
     
     conn.close()
     
-    return render_template('settings.html', settings=settings_data, categories=categories, brands=brands)
+    settings_dict = dict(settings_data) if settings_data else {}
+    return render_template('settings.html', settings=settings_dict, categories=categories, brands=brands)
 
 @app.route('/api/add_category', methods=['POST'])
 def add_category():
@@ -274,5 +315,37 @@ def delete_brand(brand_id):
     conn.close()
     return jsonify({"success": True})
 
+import webview
+import shutil
+import os
+
+class AppApi:
+    def save_pdf(self, bill_id):
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT bill_number FROM Bills WHERE id = ?", (bill_id,))
+        bill = cursor.fetchone()
+        conn.close()
+        
+        if bill:
+            pdf_path = os.path.join(os.getcwd(), 'invoices', f"{bill['bill_number']}.pdf")
+            if os.path.exists(pdf_path):
+                window = webview.windows[0]
+                save_filename = window.create_file_dialog(
+                    webview.SAVE_DIALOG, 
+                    directory=os.getcwd(), 
+                    save_filename=f"{bill['bill_number']}.pdf"
+                )
+                if save_filename:
+                    if isinstance(save_filename, tuple) or isinstance(save_filename, list):
+                        save_filename = save_filename[0]
+                    shutil.copy(pdf_path, save_filename)
+                    return True
+        return False
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    if getattr(sys, 'frozen', False):
+        webview.create_window('Electronics Billing', app, js_api=AppApi())
+        webview.start()
+    else:
+        app.run(debug=True, port=5000)
